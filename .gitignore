@@ -1,0 +1,7 @@
+data/*
+!data/ocr_labels.csv
+!data/formal_tests.csv
+!data/homogenization.csv
+__pycache__/
+*.pyc
+.DS_Store
