@@ -101,16 +101,31 @@ class Sec:
         return None
 
 
-def firm_filings(zf, names, cik, lo, hi):
-    """This firm's 8-K / DEF 14A / 10-K filings dated between lo and hi."""
+def firm_filings(zf, names, cik, lo, hi, sec=None, stats=None):
+    """This firm's 8-K / DEF 14A / 10-K filings dated between lo and hi.
+    The main JSON holds only a company's most recent ~1,000 filings; older ones are in overflow
+    files. An overflow file covering the window that is missing from the zip is fetched from SEC."""
     fn = f"CIK{cik:010d}.json"
     if fn not in names:
+        if stats is not None:
+            stats["not_in_zip"] += 1
         return []
     sub = json.loads(zf.read(fn))
     blocks = [sub.get("filings", {}).get("recent", {})]
     for extra in sub.get("filings", {}).get("files", []):
+        if extra.get("filingTo", "9999") < lo or extra.get("filingFrom", "0000") > hi:
+            continue                                   # overflow file outside the window
         if extra["name"] in names:
             blocks.append(json.loads(zf.read(extra["name"])))
+        elif sec is not None:
+            r = sec.get(f"https://data.sec.gov/submissions/{extra['name']}")
+            if stats is not None:
+                stats["overflow_fetched" if r is not None else "overflow_failed"] += 1
+            if r is not None:
+                try:
+                    blocks.append(r.json())
+                except ValueError:
+                    pass
     out = []
     for b in blocks:
         for i in range(len(b.get("form", []))):
@@ -244,6 +259,8 @@ def main():
     ap.add_argument("--workers", type=int, default=6)
     ap.add_argument("--rate", type=float, default=6.0, help="max SEC requests per second (SEC limit is 10)")
     ap.add_argument("--sample", type=int, default=None)
+    ap.add_argument("--redo_empty", action="store_true",
+                    help="collect again the firms that so far have no image at all")
     ap.add_argument("--seed", type=int, default=519)
     args = ap.parse_args()
     Y = args.year
@@ -259,17 +276,28 @@ def main():
     firms = pd.read_csv(firms_path)
     if args.sample:
         firms = firms.sample(min(args.sample, len(firms)), random_state=args.seed)
-    done = set(pd.read_csv(cand_path, usecols=["cik"])["cik"].unique()) if os.path.exists(cand_path) else set()
+    done = set()
+    if os.path.exists(cand_path):
+        prev = pd.read_csv(cand_path, usecols=["cik", "phash"])
+        done = set(prev["cik"].unique())
+        if args.redo_empty:
+            has_img = set(prev.loc[prev["phash"].notna(), "cik"])
+            done = has_img
+            print(f"--redo_empty: {len(set(prev['cik']) - has_img):,} firms without images will be collected again")
     todo = [int(c) for c in firms["cik"] if int(c) not in done]
     print(f"Base year {Y}: firms {len(firms):,}  already collected {len(firms) - len(todo):,}  to do {len(todo):,}")
     print(f"Rate limit {args.rate}/s shared by {args.workers} workers")
 
+    sec = Sec(args.name, args.email, args.rate)
     print("Reading filing lists from submissions.zip...")
+    stats = {"not_in_zip": 0, "overflow_fetched": 0, "overflow_failed": 0}
     with zipfile.ZipFile(args.submissions) as zf:
         names = set(zf.namelist())
-        fl = {cik: firm_filings(zf, names, cik, f"{Y - 1}-07-01", f"{Y + 1}-06-30") for cik in todo}
-
-    sec = Sec(args.name, args.email, args.rate)
+        fl = {cik: firm_filings(zf, names, cik, f"{Y - 1}-07-01", f"{Y + 1}-06-30", sec, stats) for cik in todo}
+    no_filings = sum(1 for v in fl.values() if not v)
+    print(f"  firms with no 8-K/DEF 14A/10-K in the window: {no_filings:,} of {len(todo):,}; "
+          f"overflow files fetched from SEC: {stats['overflow_fetched']}, failed: {stats['overflow_failed']}, "
+          f"firms missing from the zip: {stats['not_in_zip']}")
     t0 = time.time()
     header = not os.path.exists(cand_path)
     finished = 0
