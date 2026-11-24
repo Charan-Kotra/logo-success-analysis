@@ -8,3 +8,7 @@ __pycache__/
 *.log
 *.zip
 .venv/
+!data/edgar*/
+data/edgar*/*
+!data/edgar*/firms_*.csv
+data/edgar*/firms_*_all.csv
