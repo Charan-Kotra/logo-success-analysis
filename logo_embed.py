@@ -25,9 +25,11 @@ import os
 import time
 from pathlib import Path
 
+import re
+
 import numpy as np
 import pandas as pd
-from PIL import Image, ImageDraw
+from PIL import Image, ImageFilter
 
 os.environ.setdefault("PYTORCH_ENABLE_MPS_FALLBACK", "1")
 
@@ -47,7 +49,7 @@ def set_year(y):
     OUT = Path("data/embed" if y == 2019 else f"data/embed_{y}")
     MASK_DIR, OCR_LOG, INDEX = OUT / "masked", OUT / "ocr_boxes.jsonl", OUT / "index.csv"
 SIZE = 224
-SYMBOL_MIN_INK = 0.15   # share of logo "ink" that must remain after masking to count as a symbol
+SYMBOL_MIN_INK = 0.08   # share of logo "ink" that must remain after masking to count as a symbol
 
 MODELS = {
     "clip": ("openai/clip-vit-base-patch32",
@@ -59,7 +61,11 @@ MODELS = {
 
 # ---------------------------------------------------------------- helpers
 def analysis_set():
-    d = pd.read_csv(CHOICE)
+    # logo_choice_all.csv (EDGAR + Wayback logos, from wayback_logos.py) is used when it exists
+    alt = CHOICE.with_name("logo_choice_all.csv")
+    d = pd.read_csv(alt if alt.exists() else CHOICE)
+    if "logo_source" not in d:
+        d["logo_source"] = "edgar"
     slide = d["logo_in_slide"].astype(str).str.lower().eq("true")
     a = d[d["confidence"].isin(["high", "medium"]) & ~slide].copy()
     a = a[a["logo_path"].map(lambda p: Path(str(p)).exists())]
@@ -76,16 +82,82 @@ def load_rgb(path):
     return im.convert("RGB")
 
 
+def mode_color(pixels):
+    """Most common colour (coarse bins first, then the exact most common value in that bin)."""
+    px = pixels.reshape(-1, 3).astype(np.int32)
+    q = px // 16
+    keys = q[:, 0] * 10000 + q[:, 1] * 100 + q[:, 2]
+    vals, counts = np.unique(keys, return_counts=True)
+    cluster = px[keys == vals[counts.argmax()]]
+    exact, n = np.unique(cluster, axis=0, return_counts=True)
+    return tuple(int(v) for v in exact[n.argmax()])
+
+
 def ring_color(arr):
-    """Median colour of the 2-pixel outer frame = background estimate."""
-    ring = np.concatenate([arr[:2].reshape(-1, 3), arr[-2:].reshape(-1, 3),
-                           arr[:, :2].reshape(-1, 3), arr[:, -2:].reshape(-1, 3)])
-    return tuple(int(v) for v in np.median(ring, axis=0))
+    """Background of the whole logo: its most common colour (white for most logos, the
+    badge colour for logos printed on a filled shape)."""
+    return mode_color(arr)
 
 
 def ink_mask(arr, bg, tol=40):
     """Pixels that differ clearly from the background = the drawn part of the logo."""
     return np.abs(arr.astype(np.int16) - np.array(bg, dtype=np.int16)).sum(axis=2) > tol
+
+
+def name_tokens(name):
+    """Words of the firm's name and its initials, for accepting very short OCR text."""
+    words = [w for w in re.findall(r"[a-z0-9]+", str(name).lower())
+             if w not in {"inc", "corp", "co", "ltd", "llc", "the", "of", "and", "plc", "lp"}]
+    toks = set(words)
+    if words:
+        toks.add("".join(w[0] for w in words))
+    return toks
+
+
+def _grow(mask, size):
+    return np.asarray(Image.fromarray((mask * 255).astype(np.uint8)).filter(ImageFilter.MaxFilter(size))) > 0
+
+
+def text_pixels(arr, box, tol=70, min_share=0.25):
+    """Pixels inside an OCR text box that belong to the text.
+    Text colours: the most common clearly-non-background colour in the box, then up to two
+    more colours that each cover at least `min_share` of the box's ink (two-colour wordmarks
+    like "Anaptys" + "Bio"). A smaller patch of another colour (Aflac's duck, Unum's dots)
+    is kept. Faint anti-aliased edge pixels next to the letters are removed too, so no
+    "ghost" text is left for the image model to read."""
+    x0, y0, x1, y1 = (int(round(v)) for v in box)
+    reg = arr[y0:y1 + 1, x0:x1 + 1].astype(np.int16)
+    out = np.zeros(arr.shape[:2], dtype=bool)
+    if reg.size == 0 or min(reg.shape[:2]) < 3:
+        return out, (255, 255, 255)
+    # background right around the text: most common colour on the box's edge
+    edge = np.concatenate([reg[0], reg[-1], reg[:, 0], reg[:, -1]])
+    bg = mode_color(edge)
+    bgv = np.array(bg, dtype=np.int16)
+    diff_bg = np.abs(reg - bgv).sum(axis=2)
+    ink = diff_bg > 60
+    total = int(ink.sum())
+    if total < 5:
+        return out, bg
+    core = np.zeros(ink.shape, dtype=bool)
+    remaining = ink.copy()
+    for _ in range(3):
+        if remaining.sum() < min_share * total:
+            break
+        px = reg[remaining]
+        keys = (px // 32).astype(np.int32)
+        keys = keys[:, 0] * 10000 + keys[:, 1] * 100 + keys[:, 2]
+        vals, counts = np.unique(keys, return_counts=True)
+        color = px[keys == vals[counts.argmax()]].mean(axis=0)
+        close = (np.abs(reg - color).sum(axis=2) < tol) & ink
+        if close.sum() < min_share * total and core.any():
+            break
+        core |= close
+        remaining &= ~close
+    faint = diff_bg > 20
+    mask = _grow(core, 5) | (faint & _grow(core, 9))
+    out[y0:y1 + 1, x0:x1 + 1] = mask
+    return out, bg
 
 
 def square(im, size=SIZE):
@@ -121,7 +193,7 @@ def run_mask(a, limit=None, max_side=900):
 
     MASK_DIR.mkdir(parents=True, exist_ok=True)
     done = set(read_ocr_log()["cik"].astype(int)) if OCR_LOG.exists() else set()
-    todo = a[~a["cik"].isin(done)]
+    todo = a[~a["cik"].isin(done)].rename(columns={NAME_COL: "name_base"})
     if limit:
         todo = todo.head(limit)
     print(f"mask: {len(done)} already done, {len(todo)} to process")
@@ -139,35 +211,58 @@ def run_mask(a, limit=None, max_side=900):
                 arr = np.asarray(im)
                 # small logos are upscaled for OCR, huge ones downscaled for speed
                 s = 2.0 if max(im.size) < 300 else min(1.0, max_side / max(im.size))
-                work = im if s == 1.0 else im.resize(
-                    (max(1, round(im.width * s)), max(1, round(im.height * s))), Image.BICUBIC)
 
+                allowed_short = name_tokens(row.name_base)
+
+                def detect(img_arr):
+                    found = []
+                    w_img = Image.fromarray(img_arr)
+                    if s != 1.0:
+                        w_img = w_img.resize((max(1, round(im.width * s)), max(1, round(im.height * s))),
+                                             Image.BICUBIC)
+                    for pts, text, conf in reader.readtext(np.asarray(w_img)):
+                        alnum = re.sub(r"[^a-z0-9]", "", text.lower())
+                        if conf < 0.3 or not alnum:
+                            continue
+                        # 1-2 character "text" that is not part of the name is usually a symbol
+                        if len(alnum) <= 2 and not any(t.startswith(alnum) for t in allowed_short):
+                            continue
+                        xs = [p[0] / s for p in pts]
+                        ys = [p[1] / s for p in pts]
+                        pad = 0.08 * (max(ys) - min(ys)) + 2
+                        found.append(((max(0, min(xs) - pad), max(0, min(ys) - pad),
+                                       min(im.width - 1, max(xs) + pad), min(im.height - 1, max(ys) + pad)), text))
+                    return found
+
+                in_box = np.zeros(arr.shape[:2], dtype=bool)
+                masked_arr = arr.copy()
                 boxes, words = [], []
-                for pts, text, conf in reader.readtext(np.asarray(work)):
-                    if conf < 0.3 or not any(ch.isalnum() for ch in text):
-                        continue
-                    xs = [p[0] / s for p in pts]
-                    ys = [p[1] / s for p in pts]
-                    pad = 0.08 * (max(ys) - min(ys)) + 2
-                    boxes.append((max(0, min(xs) - pad), max(0, min(ys) - pad),
-                                  min(im.width - 1, max(xs) + pad), min(im.height - 1, max(ys) + pad)))
-                    words.append(text)
-
-                bg = ring_color(arr)
-                ink = ink_mask(arr, bg)
-                in_box = np.zeros(ink.shape, dtype=bool)
-                for x0, y0, x1, y1 in boxes:
-                    in_box[int(y0):int(y1) + 1, int(x0):int(x1) + 1] = True
-
-                masked = im.copy()
-                draw = ImageDraw.Draw(masked)
-                for b in boxes:
-                    draw.rectangle(b, fill=bg)
+                # pass 1 on the original; pass 2 on the masked image catches text left over
+                # (a second text colour, a line OCR missed). Symbols are not read as text.
+                fills = []
+                for _pass in range(2):
+                    found = detect(masked_arr)
+                    if not found:
+                        break
+                    for b, text in found:
+                        mk, local_bg = text_pixels(masked_arr, b)
+                        in_box |= mk
+                        fills.append((mk, local_bg))
+                        boxes.append(b)
+                        words.append(text)
+                    masked_arr = arr.copy()
+                    for mk, local_bg in fills:
+                        masked_arr[mk] = local_bg
                 out = MASK_DIR / f"{row.cik}.png"
-                masked.save(out)
+                Image.fromarray(masked_arr).save(out)
 
+                # "ink" = pixels that differ from the background, where the background is the most
+                # common colour OUTSIDE the text (so heavy wordmarks like KOHL'S are measured right)
+                outside = arr[~in_box]
+                bg = mode_color(outside) if len(outside) >= 50 else ring_color(arr)
+                ink = ink_mask(arr, bg)
                 total = int(ink.sum())
-                rec.update(masked_path=str(out), text=" ".join(words), n_boxes=len(boxes),
+                rec.update(masked_path=str(out), text=" ".join(words), n_boxes=len(boxes), version=2,
                            text_share=round(float(in_box.mean()), 4),
                            ink_left=round(float((ink & ~in_box).sum() / total), 4) if total else 0.0)
             except Exception as e:
@@ -194,7 +289,7 @@ def build_index(a):
                           np.where(idx["ink_left"] < SYMBOL_MIN_INK, "text_only", "symbol_and_text"))
     idx["base_year"] = YEAR
     idx = idx.rename(columns={NAME_COL: "name_base"})
-    keep = ["cik", "base_year", "name_base", "sector", "outcome_2024", "confidence", "logo_path", "masked_path",
+    keep = ["cik", "base_year", "name_base", "sector", "outcome_2024", "confidence", "logo_source", "logo_path", "masked_path",
             "mask_failed", "text", "n_boxes", "text_share", "ink_left", "symbol_type"]
     idx = idx[keep].sort_values("cik").reset_index(drop=True)
     idx.to_csv(INDEX, index=False)

@@ -80,17 +80,31 @@ def build(Y):
          "reported financials (USD); tobins_q = (assets - equity + public float) / assets")
 
     # ---------------------------------------------------------- 2. logos
-    lc = pd.read_csv(ydir("logos", Y) / "logo_choice.csv")
+    alt = ydir("logos", Y) / "logo_choice_all.csv"          # EDGAR + Wayback, if wayback_logos.py ran
+    base_choice = ydir("logos", Y) / "logo_choice.csv"
+    if alt.exists():
+        lc = pd.read_csv(alt)
+    elif base_choice.exists():
+        lc = pd.read_csv(base_choice)
+    else:                                                  # logos not scored yet: build everything else
+        print(f"  note: no logos for {Y} yet ({base_choice}); logo columns left empty, rerun after logo_score.py")
+        lc = pd.DataFrame({"cik": m["cik"], "confidence": "none", "logo_in_slide": False})
     lc["cik"] = lc["cik"].astype(int)
-    lcols = ["confidence", "n_filings", "name_match", "logo_prob", "quality", "short_side",
+    if "logo_source" not in lc:
+        lc["logo_source"] = "edgar"
+    lcols = ["logo_source", "confidence", "n_filings", "name_match", "logo_prob", "quality", "short_side",
              "sharpness", "logo_in_slide", "window", "form", "logo_path", "ocr_text"]
-    lg = lc[["cik"] + [c for c in lcols if c in lc]].rename(
+    for c in lcols:
+        if c not in lc:
+            lc[c] = np.nan
+    lg = lc[["cik"] + lcols].rename(
         columns={c: (c if c.startswith("logo_") else f"logo_{c}") for c in lcols})
     m = m.merge(lg, on="cik", how="left")
     slide = m["logo_in_slide"].astype(str).str.lower().eq("true")
     m["in_logo_sample"] = m["logo_confidence"].isin(["high", "medium"]) & ~slide
-    note([c for c in m.columns if c.startswith("logo_")], "EDGAR logo extraction",
-         "chosen base-year logo and its confidence / quality scores")
+    note([c for c in m.columns if c.startswith("logo_")], "EDGAR / Wayback logo extraction",
+         "chosen base-year logo, its source (edgar = SEC filings, wayback = archived company homepage) "
+         "and its confidence / quality scores")
     note("in_logo_sample", "derived", "high/medium confidence and not a slide (the analysis sample)")
 
     idx = ydir("embed", Y) / "index.csv"
@@ -102,6 +116,19 @@ def build(Y):
         m = m.merge(ei, on="cik", how="left")
         note(["logo_symbol_type", "logo_text_boxes", "logo_text_share", "logo_ink_left", "logo_masked_path"],
              "logo_embed.py", "text masking: text_only / symbol_and_text / symbol_only")
+
+    dfile = ydir("embed", Y) / "distinctiveness.csv"
+    if dfile.exists():
+        dcols = ["D_visual", "D_overall", "D_visual_dino_orig", "sector_norm_strength", "peer_group", "peer_group_n"]
+        dd = pd.read_csv(dfile)
+        extra = [c for c in dd.columns if c.endswith("_z") or c.startswith(("clip_", "dino_"))]
+        m = m.merge(dd[["cik"] + [c for c in dcols + extra if c in dd]], on="cik", how="left")
+        note([c for c in dcols if c in dd], "distinctiveness.py",
+             "D_visual = design distinctiveness (masked logos, DINOv2 + CLIP), D_overall = design + wording "
+             "(original logo, CLIP); within-sector z-scores, larger = more distinctive")
+        note(extra, "distinctiveness.py", "component scores: <model>_<orig|masked>_<knn5|knn10|knn20|centroid>[_z]")
+
+    m = m.copy()
 
     # ---------------------------------------------------------- 3. Wikidata (firm-level facts, any year's file)
     wfiles = sorted(glob.glob(str(D / "wikidata*" / "firm_links.csv")))
@@ -258,6 +285,7 @@ def build(Y):
     dl2 = dl[(dl["dlstdt"] > base_date) & (dl["dlstcd"] != 100)][["permno", "dlstdt", "dlstcd"]]
     m = m.merge(dl2.rename(columns={"dlstdt": "crsp_delist_date", "dlstcd": "crsp_dlstcd"}), on="permno", how="left")
     code = m["crsp_dlstcd"]
+    m = m.copy()
     m["crsp_exit"] = np.select(
         [m["permno"].isna(), code.isna(), code.between(200, 299), code.between(300, 399),
          code.between(400, 499), code.between(501, 505), code.eq(574), code.between(500, 599)],
