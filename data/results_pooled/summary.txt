@@ -1,0 +1,31 @@
+Pooled sample: 8,865 firm-years from 4,933 firms; years 2015: 2,364, 2019: 3,100, 2022: 3,401
+
+POOLED CONFIRMATORY TESTS (year fixed effects, SE clustered by firm, Holm across H1-H5):
+                                                 test  estimate  ci_low  ci_high      p  p_holm       verdict    n
+              H1 pooled: distinctiveness -> valuation    0.0137 -0.0031   0.0304 0.1096  0.5481 not supported 8865
+                              H2 pooled: squared term    0.0042 -0.0066   0.0150 0.4464  0.8990 not supported 8865
+          H3 pooled: design (D_visual) beyond wording   -0.0129 -0.0390   0.0133 0.3339  0.8990 not supported 6752
+                  H4 pooled: D x sector norm strength    0.0357 -0.0220   0.0934 0.2247  0.8990 not supported 8865
+H5 pooled: failed within 2 years (linear probability)    0.0017 -0.0012   0.0046 0.2539  0.8990 not supported 8865
+
+H1 BY YEAR:
+  year  estimate  ci_low  ci_high      p    n
+  2015    0.0149 -0.0162   0.0460 0.3476 2364
+  2019    0.0270  0.0016   0.0524 0.0369 3100
+  2022    0.0004 -0.0223   0.0231 0.9708 3401
+pooled    0.0137 -0.0031   0.0304 0.1096 8865
+do the yearly H1 estimates differ? F-test p = 0.231
+pooled effect size: +1.4% Q per 1 SD (95% CI -0.3% to +3.1%)
+
+REBRANDS (exploratory):
+unique logo designs: about 6,377 (8,865 firm-year logos minus 2,488 repeats of the same logo)
+firms with a usable logo in two consecutive base years: 3,828 pairs
+change     rebranded  refreshed  same
+pair                                 
+2015-2019        310        327  1015
+2019-2022        337        366  1473
+rebrands that became LESS distinctive (closer to the sector norm): 51% (mean change in D -0.10, t-test p = 0.094)
+                                                                test  estimate  ci_low  ci_high      p    n
+within-firm: change in log Q ~ change in distinctiveness (all pairs)    0.0043 -0.0231   0.0316 0.7604 3828
+                                      within-firm, logo changed only    0.0015 -0.0283   0.0312 0.9237 1340
+                             rebranded vs kept logo: change in log Q   -0.0461 -0.1026   0.0105 0.1106 3828

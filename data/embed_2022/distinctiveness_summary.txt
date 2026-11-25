@@ -1,0 +1,66 @@
+Distinctiveness, base year 2022: 3436 firms, peer groups 19
+D_visual available for 2596 (text-only logos excluded), D_overall for 3436
+
+Spearman correlations between measures (do they agree?):
+                        D_visual  D_overall  D_visual_dino_orig  clip_masked_knn10_z  dino_masked_knn10_z  clip_orig_centroid_z  dino_masked_centroid_z  clip_orig_knn5_z  clip_orig_knn20_z
+D_visual                    1.00       0.20                0.62                 0.74                 0.72                  0.24                    0.73              0.19               0.21
+D_overall                   0.20       1.00                0.17                 0.18                 0.14                  0.87                    0.15              0.98               0.99
+D_visual_dino_orig          0.62       0.17                1.00                 0.25                 0.74                  0.20                    0.71              0.16               0.18
+clip_masked_knn10_z         0.74       0.18                0.25                 1.00                 0.14                  0.23                    0.18              0.17               0.19
+dino_masked_knn10_z         0.72       0.14                0.74                 0.14                 1.00                  0.16                    0.94              0.13               0.15
+clip_orig_centroid_z        0.24       0.87                0.20                 0.23                 0.16                  1.00                    0.17              0.81               0.91
+dino_masked_centroid_z      0.73       0.15                0.71                 0.18                 0.94                  0.17                    1.00              0.14               0.15
+clip_orig_knn5_z            0.19       0.98                0.16                 0.17                 0.13                  0.81                    0.14              1.00               0.95
+clip_orig_knn20_z           0.21       0.99                0.18                 0.19                 0.15                  0.91                    0.15              0.95               1.00
+
+Raw (not z) mean distinctiveness by sector, clip_orig_knn10 and dino_masked_knn10:
+                               clip_orig_knn10  dino_masked_knn10
+sector                                                           
+Pharma & Biotech                         0.248              0.170
+Banks & financial services               0.251              0.197
+Tech hardware & electronics              0.297              0.201
+Energy & Mining                          0.301              0.245
+Healthcare devices & services            0.301              0.195
+Industrial manufacturing                 0.301              0.210
+Utilities                                0.307              0.242
+Insurance                                0.309              0.287
+Software & IT services                   0.310              0.187
+Services                                 0.320              0.219
+Autos & transportation                   0.322              0.273
+Telecom                                  0.341              0.283
+Retail                                   0.344              0.270
+Wholesale                                0.351              0.259
+Real estate                              0.354              0.278
+Construction                             0.368              0.299
+Consumer products                        0.373              0.266
+Food, beverage & tobacco                 0.375              0.293
+Other                                    0.407              0.335
+
+Sector norm strength (lift of masked logos):
+sector
+Food, beverage & tobacco         1.76
+Real estate                      1.67
+Pharma & Biotech                 1.58
+Utilities                        1.58
+Consumer products                1.57
+Healthcare devices & services    1.48
+Banks & financial services       1.45
+Software & IT services           1.40
+Insurance                        1.37
+Autos & transportation           1.30
+Industrial manufacturing         1.25
+Other                            1.24
+Tech hardware & electronics      1.23
+Construction                     1.20
+Energy & Mining                  1.08
+Telecom                          1.05
+Retail                           1.01
+Services                         0.92
+Wholesale                        0.66
+
+D_overall by logo type:
+                  count  mean   std
+symbol_type                        
+symbol_and_text  2467.0  0.04  1.03
+symbol_only       129.0 -0.16  1.01
+text_only         840.0 -0.10  0.89

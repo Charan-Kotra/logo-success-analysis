@@ -1,0 +1,39 @@
+Base year 2019: main sample 3100 firms (D_visual available for 2328)
+
+CONFIRMATORY TESTS (Holm-corrected across H1-H5):
+                                               test  estimate  ci_low  ci_high      p  p_holm       verdict
+                    H1 distinctiveness -> valuation    0.0270  0.0016   0.0524 0.0369  0.1843 not supported
+                       H2 sweet spot (squared term)    0.0036 -0.0120   0.0192 0.6503  1.0000 not supported
+                H3 design (D_visual) beyond wording   -0.0048 -0.0448   0.0352 0.8145  1.0000 not supported
+                        H4 D x sector norm strength    0.0130 -0.0637   0.0897 0.7393  1.0000 not supported
+H5 distinctiveness -> failure by 2024 (vs survived)   -0.0050 -0.1717   0.1618 0.9533  1.0000 not supported
+
+Notes:
+  H1 distinctiveness -> valuation: wild cluster bootstrap p (sector) = 0.026
+  H2 sweet spot (squared term): peak at D = -3.40 (5th-95th pct -1.47 to 1.63); two-lines: slope below +0.037 (p 0.248), above +0.056 (p 0.057); full shape criteria met: False
+  H3 design (D_visual) beyond wording: components: clip -0.002 (p 0.920), dino -0.004 (p 0.799); same sign: True
+  H4 D x sector norm strength: interaction has the same sign as the main effect (effect grows with norm): True
+  H5 distinctiveness -> failure by 2024 (vs survived): failed 166, acquired 516, survived 2298; acquired-vs-survived coef -0.048 (p 0.357); log-odds per 1 SD
+
+H1 effect size: 1 SD more distinctive logo -> +2.7% Tobin's Q (95% CI +0.2% to +5.4%)
+Smallest effect this sample could detect (80% power, 5%): about 3.6% of Q per 1 SD
+
+ROBUSTNESS AND PLACEBO (H1 re-runs):
+                                                     test  estimate  ci_low  ci_high      p    n
+                                              main (k=10)    0.0270  0.0016   0.0524 0.0369 3100
+                                measure: clip_orig_knn5_z    0.0259  0.0006   0.0512 0.0445 3100
+                               measure: clip_orig_knn20_z    0.0281  0.0027   0.0536 0.0305 3100
+                            measure: clip_orig_centroid_z    0.0321  0.0061   0.0581 0.0156 3100
+                               measure: dino_orig_knn10_z    0.0103 -0.0184   0.0389 0.4828 3100
+                         visual only: clip_masked_knn10_z    0.0054 -0.0281   0.0388 0.7529 2328
+                         visual only: dino_masked_knn10_z    0.0020 -0.0270   0.0309 0.8945 2328
+                                    visual only: D_visual    0.0059 -0.0349   0.0467 0.7764 2328
+                             excluding banks and insurers    0.0184 -0.0115   0.0482 0.2283 2603
+                               high-confidence logos only    0.0249 -0.0011   0.0508 0.0601 2945
+                                         EDGAR logos only    0.0270  0.0016   0.0524 0.0369 3100
+                                    US-headquartered only    0.0275  0.0025   0.0524 0.0309 2946
+                            Tobin's Q from Compustat only    0.0324  0.0073   0.0575 0.0113 2911
+    PLACEBO: returns in the 2 years before (should be ~0)    0.0078 -0.0275   0.0430 0.6656 2696
+                      secondary: change in log Q, 2 years   -0.0120 -0.0305   0.0066 0.2071 2625
+                    secondary: 2-year return minus market    0.0230 -0.0200   0.0660 0.2942 2676
+PLACEBO: D vs a random peer group (real coef vs shuffled)    0.0287  0.0211   0.0355 0.6368 3100

@@ -1,0 +1,47 @@
+Traded operating companies in the 2021 sample: 4,861 (of 5,563 10-K filers after SIC exclusions)
+
+Outcome by 2024:
+  survived      4,133  (85%)
+  acquired        400  (8%)
+  other_exit      231  (5%)
+  bankrupt         97  (2%)
+
+Firms by sector:
+  Pharma & Biotech                    739
+  Banks & financial services          616
+  Industrial manufacturing            488
+  Services                            451
+  Software & IT services              394
+  Tech hardware & electronics         310
+  Healthcare devices & services       296
+  Energy & Mining                     260
+  Retail                              254
+  Autos & transportation              222
+  Utilities                           140
+  Insurance                           126
+  Wholesale                           119
+  Consumer products                   102
+  Food, beverage & tobacco             98
+  Real estate                          86
+  Telecom                              79
+  Construction                         55
+  Other                                26
+
+Website listed in EDGAR: 0%
+Has a ticker: 72%
+
+Coverage of 2021 financials (share of firms with a value):
+  assets         99%
+  liabilities    85%
+  equity         97%
+  revenue        84%
+  net_income     99%
+  advertising    36%
+  sga            82%
+  public_float   98%
+  tobins_q       94%
+  sga_to_revenue 70%
+
+Tobin's Q 2021: median 1.69, 10th-90th percentile 0.92 to 8.64
+
+2021 values matched by SEC frame: 29,636, by latest 10-K fallback: 5,250

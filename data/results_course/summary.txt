@@ -1,0 +1,107 @@
+Course-toolkit analyses. Years: 2015 (n=2,364), 2019 (n=3,100), 2022 (n=3,401)
+
+A. LOOKALIKE VALUATION (L18 nearest neighbours, L13 baselines)
+   target: log Q net of size, profitability, leverage, age, advertising (sector effects kept)
+ year    n  r2_sector_average  r2_lookalikes_anywhere  r2_lookalikes_same_sector  corr_beyond_sector  perm_p_beyond_sector
+ 2015 2364             0.0575                  0.0002                    -0.0117              0.0443                0.0995
+ 2019 3100             0.1004                  0.0242                     0.0542              0.0721                0.0050
+ 2022 3401             0.0826                 -0.0269                     0.0293              0.0730                0.0050
+   corr_beyond_sector ~ 0: once you know the sector, the valuation of firms with similar-looking
+   logos tells you nothing more about a firm's own valuation.
+
+B. RIDGE / LASSO ON THE FULL EMBEDDING (L15, L16): out-of-sample R2 for residual log Q
+ year embedding model   cv_r2  null_r2_mean    alpha  nonzero_coefs
+ 2015 clip_orig ridge  0.0094       -0.0016  17.7828            512
+ 2015 clip_orig lasso  0.0079           NaN   0.0009             24
+ 2015 dino_orig ridge  0.0059       -0.0018  10.0000            384
+ 2015 dino_orig lasso  0.0037           NaN   0.0005             28
+ 2019 clip_orig ridge  0.0049       -0.0006  17.7828            512
+ 2019 clip_orig lasso  0.0057           NaN   0.0011              4
+ 2019 dino_orig ridge -0.0022       -0.0010  17.7828            384
+ 2019 dino_orig lasso -0.0014           NaN   0.0011              0
+ 2022 clip_orig ridge -0.0013       -0.0012  56.2341            512
+ 2022 clip_orig lasso -0.0023           NaN   0.0011              5
+ 2022 dino_orig ridge -0.0025       -0.0014 177.8279            384
+ 2022 dino_orig lasso -0.0014           NaN   0.0008              1
+   cv_r2 <= 0 means no direction in logo space predicts valuation better than the mean;
+   LASSO keeping 0 coefficients means cross-validation chose to use none of the 512 dimensions.
+
+C. LOGO SIMILARITY NETWORK (L19): 10-nearest-neighbour graph on CLIP embeddings
+ year  nodes  edges  communities  modularity  ARI_vs_sector  NMI_vs_sector  same_sector_edges  expected_if_random  sector_assortativity
+ 2015   2364  18698           16       0.528          0.148          0.159              0.253               0.078                 0.187
+ 2019   3100  24358           14       0.550          0.173          0.155              0.269               0.084                 0.198
+ 2022   3401  26682           16       0.559          0.151          0.153              0.280               0.089                 0.204
+   prototype (PageRank-central) logo per sector, 2019 if present:
+                       sector                          prototype
+       Autos & transportation           GREENBRIER COMPANIES INC
+   Banks & financial services                 BankFinancial CORP
+                 Construction                      TopBuild Corp
+            Consumer products                 ROCKY BRANDS, INC.
+              Energy & Mining                     EP Energy Corp
+     Food, beverage & tobacco                       COCA COLA CO
+Healthcare devices & services                      Soliton, Inc.
+     Industrial manufacturing            OWENS ILLINOIS INC /DE/
+                    Insurance Health Insurance Innovations, Inc.
+                        Other               Sino Agro Food, Inc.
+             Pharma & Biotech  Protagenic Therapeutics, Inc.\new
+                  Real estate         MedAmerica Properties Inc.
+                       Retail                VINCE HOLDING CORP.
+                     Services  SERVICESOURCE INTERNATIONAL, INC.
+       Software & IT services                    INSTRUCTURE INC
+  Tech hardware & electronics              Dell Technologies Inc
+                      Telecom                       COMCAST CORP
+                    Utilities           Clean Energy Fuels Corp.
+                    Wholesale       Wesco Aircraft Holdings, Inc
+
+D. CLUSTERING DIAGNOSTICS (L20): choosing k on text-masked logos (4,000 sampled)
+ k  inertia  silhouette
+ 3 923.9045      0.0734
+ 4 906.7681      0.0450
+ 5 892.7218      0.0332
+ 6 884.0005     -0.0050
+ 7 875.6063      0.0148
+ 8 868.6301      0.0252
+ 9 859.9382     -0.0002
+10 854.0475      0.0199
+11 849.2382     -0.0046
+12 845.3260      0.0004
+13 839.0105      0.0128
+14 834.9560      0.0016
+   best silhouette at k = 3 (0.073); values near 0 mean logo styles form a continuum rather than well-separated groups.
+   sector dendrograms: D_sector_dendrogram.png
+
+E. DISTRIBUTIONS (L9) and OUTLIERS (L7): raw Q is extremely skewed (shell firms with tiny assets);
+   the log helps, winsorizing at 1% / 99% then makes it close to symmetric
+ year    n  Q_median    Q_mean  share_Q_over_20        Q_max  skew_Q  skew_logQ  skew_logQ_winsorized  kurtosis_Q  kurtosis_logQ_winsorized
+ 2015 2364     1.491    20.170            0.031 5.987300e+03  18.821      3.348                 2.828     403.836                    10.954
+ 2019 3100     1.541 60467.289            0.023 1.872394e+08  55.651      4.407                 1.803    3094.996                     4.300
+ 2022 3401     1.394    32.065            0.015 5.959928e+04  44.522      3.016                 1.433    2058.738                     3.106
+
+   SIGNIFICANCE (L10): distinctiveness of firms that later failed vs survived
+ year  failed_n  survived_n  mean_D_failed  mean_D_survived  cohens_d  boot_ci_low  boot_ci_high  KS_stat   KS_p
+ 2015       152        1507         0.0412          -0.0160    0.0576      -0.1013        0.2185   0.0766 0.3727
+ 2019       166        2298        -0.0110          -0.0056   -0.0055      -0.1492        0.1408   0.0545 0.7244
+ 2022       153        2946         0.1142          -0.0190    0.1347      -0.0155        0.2875   0.1284 0.0149
+
+F. SCORE AND RANK STABILITY (L5, L8): same firm, two base years
+    years        firms    n  spearman_D  spearman_logQ  rank_change_D_median_pct
+2015-2019    all firms 1652       0.688          0.667                     9.080
+2015-2019    kept logo 1015       0.901          0.656                     6.010
+2015-2019 changed logo  637       0.348          0.682                    20.251
+2015-2022    all firms 1385       0.593          0.515                    12.852
+2015-2022    kept logo  670       0.868          0.588                     7.910
+2015-2022 changed logo  715       0.339          0.454                    20.000
+2019-2022    all firms 2176       0.743          0.654                     8.111
+2019-2022    kept logo 1473       0.917          0.713                     6.042
+2019-2022 changed logo  703       0.393          0.541                    18.634
+   kept-logo firms should keep their distinctiveness rank (a check that the score is reliable);
+   changed-logo firms show how much a redesign moves a firm's position.
+
+G. DATA FUNNEL (L6, L7): firms left after each assembly and cleaning step
+year                                           2015  2019  2022
+10-K filers (operating, after SIC exclusions)  6639  5544  5875
+publicly traded                                5222  4622  5121
+any image in filings                           4288  4473  4926
+usable logo (high/medium, not a slide)         2473  3149  3436
+main sample (logo + Tobin's Q)                 2365  3101  3401
+   logo map: G_logo_map_2019.png

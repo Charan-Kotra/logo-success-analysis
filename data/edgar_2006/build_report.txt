@@ -1,0 +1,44 @@
+Traded operating companies in the 2006 sample: 1,493 (of 6,144 10-K filers after SIC exclusions)
+
+Outcome by 2024:
+  survived      1,483  (99%)
+  other_exit        6  (0%)
+  acquired          4  (0%)
+
+Firms by sector:
+  Banks & financial services          252
+  Industrial manufacturing            217
+  Tech hardware & electronics         129
+  Services                            104
+  Retail                               92
+  Autos & transportation               88
+  Pharma & Biotech                     86
+  Utilities                            77
+  Insurance                            67
+  Healthcare devices & services        60
+  Energy & Mining                      58
+  Wholesale                            53
+  Software & IT services               50
+  Consumer products                    50
+  Food, beverage & tobacco             36
+  Telecom                              28
+  Construction                         24
+  Real estate                          19
+  Other                                 3
+
+Website listed in EDGAR: 0%
+Has a ticker: 100%
+
+Coverage of 2006 financials (share of firms with a value):
+  assets         0%
+  liabilities    0%
+  equity         13%
+  revenue        0%
+  net_income     1%
+  advertising    0%
+  sga            0%
+  public_float   0%
+  tobins_q       0%
+  sga_to_revenue 0%
+
+2006 values matched by SEC frame: 334, by latest 10-K fallback: 31

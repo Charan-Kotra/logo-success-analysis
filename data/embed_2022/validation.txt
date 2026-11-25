@@ -1,0 +1,15 @@
+Sector validation: do logos sit near same-sector logos?  (k=10, 1000 permutations)
+Firms: 3436   symbol types: {'symbol_and_text': 2467, 'text_only': 840, 'symbol_only': 129}
+
+clip orig   all logos                      n= 3436  purity 0.281 vs chance 0.088  lift 3.19x  perm p=0.0010  (null max 0.095)  probe bal.acc 0.326 vs 0.053
+clip orig   logos with a symbol            n= 2596  purity 0.278 vs chance 0.091  lift 3.07x  perm p=0.0010  (null max 0.098)  probe bal.acc 0.314 vs 0.053
+clip masked logos with a symbol            n= 2596  purity 0.134 vs chance 0.091  lift 1.48x  perm p=0.0010  (null max 0.101)  probe bal.acc 0.122 vs 0.053
+dino orig   all logos                      n= 3436  purity 0.137 vs chance 0.088  lift 1.56x  perm p=0.0010  (null max 0.094)  probe bal.acc 0.142 vs 0.053
+dino orig   logos with a symbol            n= 2596  purity 0.142 vs chance 0.091  lift 1.56x  perm p=0.0010  (null max 0.097)  probe bal.acc 0.124 vs 0.053
+dino masked logos with a symbol            n= 2596  purity 0.122 vs chance 0.091  lift 1.34x  perm p=0.0010  (null max 0.097)  probe bal.acc 0.105 vs 0.053
+
+Reading it:
+ - lift > 1 with p < 0.05 means sectors have a visual 'norm' that distinctiveness can be measured against.
+ - if 'orig' beats 'masked' by a lot, part of the sector signal comes from words in the logo
+   (e.g. 'Bank', 'Energy'), which is why the main distinctiveness scores should use masked logos too.
+ - see validation_by_sector.csv for which sectors look most alike.

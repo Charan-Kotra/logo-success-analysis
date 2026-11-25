@@ -1,0 +1,6 @@
+test,variable,estimate,se,ci_low,ci_high,p,n,note,p_holm,verdict
+H1 distinctiveness -> valuation,D_overall,0.027009864972379137,0.012939757789737617,0.0016484057358217945,0.052371324208936476,0.036856078493181024,3100,wild cluster bootstrap p (sector) = 0.026,0.1842803924659051,not supported
+H2 sweet spot (squared term),D2,0.003602623753311971,0.007945959560758907,-0.011971170808387194,0.019176418315011136,0.6502674695000743,3100,"peak at D = -3.40 (5th-95th pct -1.47 to 1.63); two-lines: slope below +0.037 (p 0.248), above +0.056 (p 0.057); full shape criteria met: False",1.0,not supported
+H3 design (D_visual) beyond wording,D_visual,-0.00478955471767528,0.020410129457230454,-0.044792673373647014,0.03521356393829645,0.8144683106359998,2328,"components: clip -0.002 (p 0.920), dino -0.004 (p 0.799); same sign: True",1.0,not supported
+H4 D x sector norm strength,Dxnorm,0.01302313218742096,0.0391289573481973,-0.06366821496764966,0.08971447934249158,0.7392656727914613,3100,interaction has the same sign as the main effect (effect grows with norm): True,1.0,not supported
+H5 distinctiveness -> failure by 2024 (vs survived),D_overall,-0.0049809441762925875,0.08507561549853748,-0.17172915055342605,0.1617672622008409,0.9533127190290616,2980,"failed 166, acquired 516, survived 2298; acquired-vs-survived coef -0.048 (p 0.357); log-odds per 1 SD",1.0,not supported

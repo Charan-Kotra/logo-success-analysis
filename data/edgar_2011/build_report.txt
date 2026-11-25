@@ -1,0 +1,47 @@
+Traded operating companies in the 2011 sample: 5,604 (of 7,667 10-K filers after SIC exclusions)
+
+Outcome by 2024:
+  survived      2,459  (44%)
+  acquired      1,931  (34%)
+  other_exit      896  (16%)
+  bankrupt        318  (6%)
+
+Firms by sector:
+  Banks & financial services          848
+  Industrial manufacturing            618
+  Services                            533
+  Energy & Mining                     488
+  Tech hardware & electronics         463
+  Pharma & Biotech                    421
+  Software & IT services              337
+  Retail                              297
+  Healthcare devices & services       287
+  Autos & transportation              217
+  Utilities                           189
+  Wholesale                           161
+  Insurance                           148
+  Telecom                             147
+  Consumer products                   145
+  Food, beverage & tobacco            120
+  Real estate                          90
+  Construction                         66
+  Other                                29
+
+Website listed in EDGAR: 0%
+Has a ticker: 39%
+
+Coverage of 2011 financials (share of firms with a value):
+  assets         98%
+  liabilities    73%
+  equity         96%
+  revenue        68%
+  net_income     95%
+  advertising    35%
+  sga            77%
+  public_float   97%
+  tobins_q       92%
+  sga_to_revenue 56%
+
+Tobin's Q 2011: median 1.30, 10th-90th percentile 0.80 to 12.47
+
+2011 values matched by SEC frame: 35,982, by latest 10-K fallback: 6,302

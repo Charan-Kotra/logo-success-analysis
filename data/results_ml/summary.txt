@@ -1,0 +1,136 @@
+Exploratory ML analyses. Years: 2015 (n=2,364), 2019 (n=3,100), 2022 (n=3,401)
+
+1. SECTOR FROM LOGO (5-fold balanced accuracy; chance = 1 / number of sectors):
+year          2015   2019   2022
+embedding                       
+clip_masked  0.125  0.135  0.125
+clip_orig    0.348  0.350  0.308
+dino_masked  0.097  0.113  0.092
+dino_orig    0.145  0.137  0.133
+chance: 0.056
+  2015 best-recognised sectors: Banks & financial services 66%, Pharma & Biotech 64%, Food, beverage & tobacco 53% | worst: Services 13%, Wholesale 6%, Industrial manufacturing 3%
+  2019 best-recognised sectors: Banks & financial services 66%, Pharma & Biotech 61%, Telecom 50% | worst: Services 10%, Wholesale 7%, Industrial manufacturing 6%
+  2022 best-recognised sectors: Pharma & Biotech 63%, Banks & financial services 62%, Energy & Mining 42% | worst: Services 6%, Wholesale 5%, Industrial manufacturing 4%
+
+2. DESIGN FEATURES BY YEAR (all firms; n = {2015: 2364, 2019: 3100, 2022: 3401}):
+base_year       2015    2019    2022  p (2015 vs 2022)
+n_colors       4.362   4.241   4.113             0.000
+colorfulness  65.329  66.116  66.556             0.262
+saturation     0.394   0.403   0.419             0.000
+complexity     0.559   0.543   0.536             0.001
+symmetry       0.388   0.375   0.368             0.005
+aspect         3.448   3.508   3.594             0.000
+ink_share      0.361   0.355   0.350             0.257
+text_share     0.301   0.304   0.294             0.157
+text_only      0.212   0.249   0.247             0.002
+
+   same 1,281 firms present in every year:
+base_year       2015    2019    2022
+n_colors       4.301   4.140   4.005
+colorfulness  65.766  66.768  66.888
+saturation     0.399   0.412   0.422
+complexity     0.560   0.540   0.527
+symmetry       0.392   0.384   0.382
+aspect         3.489   3.580   3.609
+ink_share      0.364   0.364   0.360
+text_share     0.308   0.308   0.294
+text_only      0.218   0.258   0.247
+
+   main hue share by year:
+base_year    2015   2019   2022
+main_hue                       
+black/grey  0.182  0.173  0.158
+blue        0.378  0.378  0.394
+cyan        0.098  0.120  0.129
+green       0.080  0.077  0.080
+orange      0.063  0.073  0.075
+pink        0.013  0.011  0.011
+purple      0.011  0.008  0.017
+red         0.151  0.139  0.119
+yellow      0.024  0.021  0.017
+
+   design by sector (all years):
+                               n_colors  colorfulness  complexity  symmetry  text_only
+sector                                                                                
+Consumer products                  4.47         50.05        0.56      0.41       0.31
+Real estate                        4.52         53.36        0.61      0.38       0.30
+Banks & financial services         4.54         60.05        0.62      0.37       0.21
+Construction                       3.80         61.78        0.49      0.42       0.29
+Insurance                          4.12         62.23        0.55      0.38       0.25
+Healthcare devices & services      4.65         62.76        0.58      0.31       0.26
+Industrial manufacturing           4.07         65.58        0.50      0.41       0.23
+Energy & Mining                    4.31         65.60        0.53      0.42       0.16
+Services                           4.16         65.71        0.54      0.37       0.30
+Tech hardware & electronics        4.10         65.88        0.53      0.37       0.26
+Wholesale                          4.11         67.19        0.53      0.42       0.19
+Food, beverage & tobacco           4.20         67.94        0.53      0.43       0.19
+Software & IT services             3.96         68.38        0.50      0.36       0.30
+Pharma & Biotech                   4.39         69.72        0.59      0.30       0.20
+Retail                             3.89         69.86        0.48      0.48       0.34
+Other                              4.36         71.31        0.50      0.43       0.12
+Autos & transportation             3.91         71.37        0.49      0.45       0.23
+Utilities                          4.03         74.10        0.52      0.38       0.12
+Telecom                            4.01         76.37        0.49      0.37       0.27
+
+3. GRADIENT BOOSTING: does adding logo features improve prediction? (5-fold grouped CV x 3)
+sample    target metric  financial_only  with_logo    gain  gain_sd folds_with_gain    n
+  2015     log_q     R2          0.4970     0.5047  0.0077   0.0164           12/15 2364
+  2019     log_q     R2          0.5805     0.5631 -0.0175   0.0219            3/15 3100
+  2019 failed_p2    AUC          0.8716     0.8821  0.0105   0.0434            9/15 3100
+  2022     log_q     R2          0.4427     0.3909 -0.0518   0.0169            0/15 3401
+  2022 failed_p2    AUC          0.7907     0.7466 -0.0441   0.0131            0/15 3401
+pooled     log_q     R2          0.5381     0.5255 -0.0127   0.0045            0/15 8865
+pooled failed_p2    AUC          0.8422     0.8244 -0.0178   0.0116            0/15 8865
+
+   summed permutation importance by feature group:
+group             financial/sector    logo
+sample target                             
+2015   log_q                0.4926  0.0414
+2019   failed_p2            0.2780  0.1135
+       log_q                0.5622  0.0584
+2022   failed_p2            0.2314 -0.0476
+       log_q                0.6069  0.0262
+pooled failed_p2            0.3451  0.0060
+       log_q                0.6464  0.0260
+
+   top 8 features (pooled, log Q):
+        feature            group  importance
+log_assets_base financial/sector      0.2719
+          roa_w financial/sector      0.1684
+          lev_w financial/sector      0.0935
+    sector_code financial/sector      0.0589
+      year_code financial/sector      0.0429
+            pc1             logo      0.0130
+     yl_missing financial/sector      0.0046
+            pc5             logo      0.0040
+
+4. SURVIVAL (Cox, stratified by sector, acquisition censored): hazard ratio per 1 SD of D_overall
+ year    n  failures  hazard_ratio_per_SD  ci_low  ci_high     p  logrank_p_quartiles  max_follow_up_years
+ 2015 2364       152                1.014   0.875    1.176 0.849                0.509                  9.0
+ 2019 3100       166                0.996   0.865    1.146 0.951                0.753                  5.0
+ 2022 3401       153                1.090   0.946    1.255 0.233                0.077                  2.0
+
+5. STYLE FAMILIES (k-means, k=8, logos with a symbol, all years):
+            n  n_colors  colorfulness  complexity  symmetry  aspect    main_hue                  top_sector  mean_log_q  failed_2y
+cluster                                                                                                                           
+0         630     4.414        56.587       0.510     0.517   2.226  black/grey  Banks & financial services       0.658      0.033
+1        1282     4.393        78.673       0.551     0.292   3.761        blue            Pharma & Biotech       0.654      0.016
+2        1270     4.835        56.267       0.655     0.318   3.882        blue            Pharma & Biotech       0.583      0.017
+3        1099     4.096        78.119       0.532     0.332   2.977        blue            Pharma & Biotech       0.549      0.025
+4         518     3.425        76.595       0.391     0.533   2.253        blue    Industrial manufacturing       0.563      0.014
+5         379     4.942        60.667       0.606     0.365   2.841        blue            Pharma & Biotech       0.714      0.016
+6         639     3.978        77.109       0.532     0.397   2.535        blue  Banks & financial services       0.429      0.013
+7         935     4.204        65.258       0.532     0.431   2.703        blue            Pharma & Biotech       0.587      0.028
+
+   share of each family by year:
+base_year   2015   2019   2022
+cluster                       
+0          0.122  0.090  0.075
+1          0.141  0.182  0.233
+2          0.202  0.192  0.175
+3          0.145  0.171  0.168
+4          0.082  0.075  0.075
+5          0.053  0.055  0.060
+6          0.102  0.095  0.089
+7          0.154  0.140  0.126
+   do the family shares change across years? chi-square p = 0.000

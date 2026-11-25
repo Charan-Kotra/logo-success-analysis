@@ -1,0 +1,47 @@
+Traded operating companies in the 2018 sample: 4,710 (of 5,679 10-K filers after SIC exclusions)
+
+Outcome by 2024:
+  survived      3,363  (71%)
+  acquired        812  (17%)
+  other_exit      369  (8%)
+  bankrupt        166  (4%)
+
+Firms by sector:
+  Banks & financial services          637
+  Pharma & Biotech                    571
+  Industrial manufacturing            506
+  Services                            437
+  Energy & Mining                     332
+  Software & IT services              326
+  Tech hardware & electronics         320
+  Healthcare devices & services       260
+  Retail                              255
+  Autos & transportation              203
+  Utilities                           154
+  Wholesale                           136
+  Insurance                           123
+  Consumer products                   105
+  Telecom                              93
+  Food, beverage & tobacco             90
+  Real estate                          84
+  Construction                         54
+  Other                                24
+
+Website listed in EDGAR: 0%
+Has a ticker: 61%
+
+Coverage of 2018 financials (share of firms with a value):
+  assets         98%
+  liabilities    82%
+  equity         96%
+  revenue        85%
+  net_income     98%
+  advertising    36%
+  sga            80%
+  public_float   98%
+  tobins_q       93%
+  sga_to_revenue 70%
+
+Tobin's Q 2018: median 1.52, 10th-90th percentile 0.88 to 10.74
+
+2018 values matched by SEC frame: 29,022, by latest 10-K fallback: 5,402
