@@ -196,10 +196,20 @@ def build(Y):
     m["log_q_base"] = np.log(m["tobins_q_base"].where(m["tobins_q_base"] > 0))
     lo, hi = m["tobins_q_base"].quantile([0.01, 0.99])
     m["q_base_w"] = m["tobins_q_base"].clip(lo, hi)
-    m["ad_reported"] = m["c_xad_base"].notna()
-    m["ad_intensity_base"] = (m["c_xad_base"] / m["c_sale_base"]).where(m["c_sale_base"] > 0)
-    m["roa_base"] = (m["c_ni_base"] / m["c_at_base"]).where(m["c_at_base"] > 0)
-    m["leverage_base"] = (m["c_lt_base"] / m["c_at_base"]).where(m["c_at_base"] > 0)
+    # Compustat first; the same figures from the firm's own SEC filings (XBRL) when Compustat is missing
+    e_at = m["e_assets_base"].where(m["e_assets_base"] > 0)
+    e_rev = m["e_revenue_base"].where(m["e_revenue_base"] > 0)
+    c_ad = (m["c_xad_base"] / m["c_sale_base"]).where(m["c_sale_base"] > 0)
+    e_ad = m["e_advertising_base"] / e_rev
+    m["ad_intensity_base"] = c_ad.fillna(e_ad)
+    m["ad_reported"] = m["c_xad_base"].notna() | m["e_advertising_base"].notna()
+    m["roa_base"] = ((m["c_ni_base"] / m["c_at_base"]).where(m["c_at_base"] > 0)
+                     .fillna(m["e_net_income_base"] / e_at))
+    e_liab = m["e_liabilities_base"].fillna(m["e_assets_base"] - m["e_equity_base"])
+    m["leverage_base"] = ((m["c_lt_base"] / m["c_at_base"]).where(m["c_at_base"] > 0)
+                          .fillna(e_liab / e_at))
+    m["controls_source"] = np.where(m["c_at_base"].notna(), "compustat",
+                                    np.where(m["e_assets_base"].notna(), "edgar", None))
     for t in ("p1", "p2", "p3"):
         m[f"dlog_q_{t}"] = np.log(m[f"c_q_{t}"].where(m[f"c_q_{t}"] > 0)) - np.log(m["c_q_base"].where(m["c_q_base"] > 0))
         m[f"sales_growth_{t}"] = np.log(m[f"c_sale_{t}"].where(m[f"c_sale_{t}"] > 0) /
@@ -209,6 +219,7 @@ def build(Y):
                 if "wd_inception" in m else pd.Series(np.nan, index=m.index))
     m["firm_age_base"] = (Y - inc_year).where(inc_year.between(1700, Y))
     m["years_listed_base"] = (Y - ipo_year).where(ipo_year <= Y)
+    note("controls_source", "derived", "where ROA, leverage and advertising came from: compustat or edgar (SEC XBRL)")
     note(["log_assets_base", "tobins_q_base", "q_source", "log_q_base", "q_base_w", "ad_reported",
           "ad_intensity_base", "roa_base", "leverage_base", "firm_age_base", "years_listed_base"],
          "derived", "base-year controls; Compustat first, EDGAR fallback; q_base_w winsorized 1%/99% within the year")

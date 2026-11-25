@@ -42,7 +42,8 @@ def prepare(m):
     d["log_q"] = np.log(winsor(d["tobins_q_base"]))
     d["roa_w"] = winsor(d["roa_base"]).fillna(0)
     d["roa_missing"] = d["roa_base"].isna().astype(int)
-    d["lev_w"] = winsor(d["leverage_base"]).fillna(d["leverage_base"].median())
+    lev_med = d["leverage_base"].median()
+    d["lev_w"] = winsor(d["leverage_base"]).fillna(0 if pd.isna(lev_med) else lev_med)
     d["yl"] = d["years_listed_base"].fillna(0)
     d["yl_missing"] = d["years_listed_base"].isna().astype(int)
     d["ad_w"] = winsor(d["ad_intensity_base"]).fillna(0)
@@ -50,7 +51,11 @@ def prepare(m):
     d["log_short_side"] = np.log(d["logo_short_side"].clip(lower=1))
     d["log_sharpness"] = np.log1p(d["logo_sharpness"].clip(lower=0))
     d["conf_high"] = (d["logo_confidence"] == "high").astype(int)
-    d["log_assets_base"] = d["log_assets_base"].fillna(d["log_assets_base"].median())
+    la_med = d["log_assets_base"].median()
+    d["log_assets_base"] = d["log_assets_base"].fillna(0 if pd.isna(la_med) else la_med)
+    for c in ("roa_w", "lev_w", "ad_w", "log_short_side", "log_sharpness"):
+        d[c] = d[c].replace([np.inf, -np.inf], np.nan).fillna(0)
+    print(f"  sample after preparing controls: {len(d)} firms")
     d["sector"] = d["sector"].fillna("Other")
     d["D2"] = d["D_overall"] ** 2
     return d.reset_index(drop=True)
